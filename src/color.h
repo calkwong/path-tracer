@@ -10,9 +10,9 @@ inline void writeColor(std::ostream& out, const vec3& color)
 	auto g{ color.y() };
 	auto b{ color.z() };
 
-	int ir{ static_cast<int>(r * 256) };
-	int ig{ static_cast<int>(g * 256) };
-	int ib{ static_cast<int>(b * 256) };
+	int ir{ static_cast<int>(r * 255.999) };
+	int ig{ static_cast<int>(g * 255.999) };
+	int ib{ static_cast<int>(b * 255.999) };
 
-	out << color[0] << ' ' << color[1] << ' ' << color[2] << '\n';
+	out << ir << ' ' << ig << ' ' << ib << '\n';
 }

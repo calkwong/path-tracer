@@ -7,26 +7,26 @@
 class vec3
 {
 public:
-	std::array<float, 3> data{};
+	std::array<double, 3> data{};
 
 	vec3() : data{}
 	{
 	}
 
-	vec3(float x, float y, float z) : data{ x, y, z }
+	vec3(double x, double y, double z) : data{ x, y, z }
 	{
 	}
 
-	vec3(float x) : data{ x, x, x }
+	vec3(double x) : data{ x, x, x }
 	{
 	}
 
-	float x() const { return data[0]; }
-	float y() const { return data[1]; }
-	float z() const { return data[2]; }
+	double x() const { return data[0]; }
+	double y() const { return data[1]; }
+	double z() const { return data[2]; }
 
 	vec3 operator-() const { return vec3(-data[0], -data[1], -data[2]); }
-	float operator[](int i) const { return data[i]; }
+	double operator[](int i) const { return data[i]; }
 
 	vec3& operator+=(const vec3& v)
 	{
@@ -46,7 +46,7 @@ public:
 		return *this;
 	}
 
-	vec3& operator*=(float t)
+	vec3& operator*=(double t)
 	{
 		data[0] *= t;
 		data[1] *= t;
@@ -55,17 +55,17 @@ public:
 		return *this;
 	}
 
-	vec3& operator/=(float t)
+	vec3& operator/=(double t)
 	{
 		return *this *= 1 / t;
 	}
 
-	float length() const
+	double length() const
 	{
 		return std::sqrt(lengthSquared());
 	}
 
-	float lengthSquared() const
+	double lengthSquared() const
 	{
 		return data[0] * data[0] + data[1] * data[1] + data[2] * data[2];
 	}
@@ -91,22 +91,22 @@ inline vec3 operator*(const vec3& u, const vec3& v)
 	return vec3(u[0] * v[0], u[1] * v[1], u[2] * v[2]);
 }
 
-inline vec3 operator*(const vec3& v, float t) 
+inline vec3 operator*(const vec3& v, double t) 
 {
 	return v * vec3(t);
 }
 
-inline vec3 operator*(float t, const vec3& v) 
+inline vec3 operator*(double t, const vec3& v) 
 {
 	return v * t;
 }
 
-inline vec3 operator/(const vec3& v, float t)
+inline vec3 operator/(const vec3& v, double t)
 {
 	return v * (1 / t);
 }
 
-inline float dot(const vec3& u, const vec3& v)
+inline double dot(const vec3& u, const vec3& v)
 {
 	return u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
 }

@@ -6,21 +6,21 @@
 vec3 rayColor(const ray& r)
 {
 	vec3 dir{ normalize(r.direction()) };
-	auto a{ 0.5f * (dir.y() + 1.0f) };
-	return (1.0f - a) * vec3(1.0f) + a * vec3(0.5f, 0.7f, 1.0f);
+	auto a{ 0.5 * (dir.y() + 1.0) };
+	return (1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0);
 }
 
 int main()
 {
 	// image
-	auto aspectRatio{ 16.0f / 9.0f };
+	auto aspectRatio{ 16.0 / 9.0 };
 	int imageWidth{ 400 };
 	int imageHeight{ int(imageWidth / aspectRatio) };
 	imageHeight = imageHeight < 1 ? 1 : imageHeight;
 
 	// camera
-	auto focalLength{ 1.0f };
-	auto viewportHeight{ 2.0f };
+	auto focalLength{ 1.0 };
+	auto viewportHeight{ 2.0 };
 	auto viewportWidth{ viewportHeight * imageWidth / imageHeight }; // (!)
 	auto cameraCenter{ vec3(0) };
 
@@ -30,8 +30,8 @@ int main()
 	auto pixelDeltaU{ viewportU / imageWidth };
 	auto pixelDeltaV{ viewportV / imageHeight };
 
-	auto viewportUpperLeft{ cameraCenter - vec3(0, 0, focalLength) - 0.5f * (viewportU + viewportV) };
-	auto pixel00{ viewportUpperLeft + 0.5f * (pixelDeltaU + pixelDeltaV) };
+	auto viewportUpperLeft{ cameraCenter - vec3(0, 0, focalLength) - 0.5 * (viewportU + viewportV) };
+	auto pixel00{ viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV) };
 
 	// render
 	std::cout << "P3\n" << imageWidth << " " << imageHeight << "\n255\n";

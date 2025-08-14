@@ -3,8 +3,23 @@
 #include "color.h"
 #include "ray.h"
 
+bool hitSphere(const vec3 center, double radius, const ray& r)
+{
+	auto d{ r.direction() };
+	auto cq{ center - r.origin() };
+	auto a{ dot(d, d) };
+	auto b{ dot(-2 * d, cq) };
+	auto c{ dot(cq, cq) - radius * radius };
+	auto discriminant{ b * b - 4 * a * c };
+
+	return (discriminant >= 0);
+}
+
 vec3 rayColor(const ray& r)
 {
+	if (hitSphere(vec3(0, 0, -1), 0.5, r))
+		return vec3(1, 0, 0);
+
 	vec3 dir{ normalize(r.direction()) };
 	auto a{ 0.5 * (dir.y() + 1.0) };
 	return (1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0);

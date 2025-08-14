@@ -3,22 +3,31 @@
 #include "color.h"
 #include "ray.h"
 
-bool hitSphere(const vec3 center, double radius, const ray& r)
+double hitSphere(const vec3 center, double radius, const ray& r)
 {
+	// Section 5.1, 6.2 for proof
 	auto d{ r.direction() };
 	auto cq{ center - r.origin() };
-	auto a{ dot(d, d) };
-	auto b{ dot(-2 * d, cq) };
-	auto c{ dot(cq, cq) - radius * radius };
-	auto discriminant{ b * b - 4 * a * c };
+	auto a{ d.lengthSquared() };
+	auto h{ dot(d, cq) };
+	auto c{ cq.lengthSquared() - radius * radius};
+	auto discriminant{ h * h - a * c };
 
-	return (discriminant >= 0);
+	if (discriminant < 0) // no solution
+		return -1.0;
+	else
+		return (h - std::sqrt(discriminant)) / a; // assume smallest t preferred for now
 }
 
 vec3 rayColor(const ray& r)
 {
-	if (hitSphere(vec3(0, 0, -1), 0.5, r))
-		return vec3(1, 0, 0);
+	auto t{ hitSphere(vec3(0, 0, -1), 0.5, r) };
+
+	if (t > 0.0) // root closest to front of camera; back omitted
+	{
+		vec3 N{ normalize(r.at(t) - vec3(0,0,-1)) };
+		return 0.5 * vec3(N.x() + 1.0, N.y() + 1.0, N.z() + 1.0);
+	}
 
 	vec3 dir{ normalize(r.direction()) };
 	auto a{ 0.5 * (dir.y() + 1.0) };

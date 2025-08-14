@@ -1,5 +1,6 @@
 #include <iostream>
 #include "vec3.h"
+#include "color.h"
 
 int main()
 {
@@ -17,15 +18,7 @@ int main()
 		std::clog << "\rScanlines remaining: " << (imageHeight - i) << ' ' << std::flush;
 		for (int j = 0; j < imageWidth; j++)
 		{
-			auto r{ static_cast<float>(j) / (imageWidth - 1) };
-			auto g{ static_cast<float>(i) / (imageHeight - 1) };
-			auto b{ 0.0f };
-
-			int ir{ static_cast<int>(r * 256) };
-			int ig{ static_cast<int>(g * 256) };
-			int ib{ static_cast<int>(b * 256) };
-
-			writeColor(std::cout, vec3(ir, ig, ib));
+			writeColor(std::cout, vec3(r, g, b));
 		}
 	}
 

@@ -129,8 +129,3 @@ inline void print(const vec3& v)
 {
 	std::cout << v[0] << ' ' << v[1] << ' ' << v[2] << '\n';
 }
-
-inline void writeColor(std::ostream& out, const vec3& color)
-{
-	out << color[0] << ' ' << color[1] << ' ' << color[2] << '\n';
-}

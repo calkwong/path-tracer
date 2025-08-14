@@ -18,7 +18,7 @@ int main()
 		std::clog << "\rScanlines remaining: " << (imageHeight - i) << ' ' << std::flush;
 		for (int j = 0; j < imageWidth; j++)
 		{
-			writeColor(std::cout, vec3(r, g, b));
+			writeColor(std::cout, vec3(j, i, 0));
 		}
 	}
 

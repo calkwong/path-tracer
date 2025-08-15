@@ -1,33 +1,24 @@
-#include <iostream>
-#include "vec3.h"
+#include "rtweekend.h"
+
+#include "hittable.h"
+#include "hittable_list.h"
+#include "sphere.h"
+
 #include "color.h"
 #include "ray.h"
+#include "vec3.h"
 
-double hitSphere(const vec3 center, double radius, const ray& r)
+#include <iostream>
+#include <memory>
+
+vec3 rayColor(const ray& r, const Hittable& world)
 {
-	// Section 5.1, 6.2 for proof
-	auto d{ r.direction() };
-	auto cq{ center - r.origin() };
-	auto a{ d.lengthSquared() };
-	auto h{ dot(d, cq) };
-	auto c{ cq.lengthSquared() - radius * radius};
-	auto discriminant{ h * h - a * c };
+	HitRecord rec{};
 
-	if (discriminant < 0) // no solution
-		return -1.0;
-	else
-		return (h - std::sqrt(discriminant)) / a; // assume smallest t preferred for now
-}
+	if (world.hit(r, 0, infinity, rec))
+		return 0.5 * (rec.normal + vec3(1));
 
-vec3 rayColor(const ray& r)
-{
 	auto t{ hitSphere(vec3(0, 0, -1), 0.5, r) };
-
-	if (t > 0.0) // root closest to front of camera; back omitted
-	{
-		vec3 N{ normalize(r.at(t) - vec3(0,0,-1)) };
-		return 0.5 * vec3(N.x() + 1.0, N.y() + 1.0, N.z() + 1.0);
-	}
 
 	vec3 dir{ normalize(r.direction()) };
 	auto a{ 0.5 * (dir.y() + 1.0) };
@@ -42,10 +33,15 @@ int main()
 	int imageHeight{ int(imageWidth / aspectRatio) };
 	imageHeight = imageHeight < 1 ? 1 : imageHeight;
 
+	// world
+	HittableList world{};
+	world.add(std::make_shared<Sphere>(vec3(0, 0, -1), 0.5));
+	world.add(std::make_shared<Sphere>(vec3(0, -100.5, -1), 100));
+
 	// camera
 	auto focalLength{ 1.0 };
 	auto viewportHeight{ 2.0 };
-	auto viewportWidth{ viewportHeight * imageWidth / imageHeight }; // (!)
+	auto viewportWidth{ viewportHeight * imageWidth / imageHeight }; 
 	auto cameraCenter{ vec3(0) };
 
 	auto viewportU{ vec3(viewportWidth, 0, 0) };
@@ -69,7 +65,7 @@ int main()
 			auto rayDir{ pixelCenter - cameraCenter };
 
 			ray r(cameraCenter, rayDir);
-			vec3 pixelColor{ rayColor(r) };
+			vec3 pixelColor{ rayColor(r, world) };
 
 			writeColor(std::cout, pixelColor);
 		}

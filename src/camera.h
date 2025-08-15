@@ -11,6 +11,7 @@ class Camera
 public:
 	double aspectRatio{ 1.0 };
 	int imageWidth{ 100 };
+	int pixelSamples{ 10 };
 
 	Camera() {}
 
@@ -20,18 +21,18 @@ public:
 
 		std::cout << "P3\n" << imageWidth << " " << imageHeight << "\n255\n";
 
-		for (int i = 0; i < imageHeight; i++)
+		for (int j = 0; j < imageHeight; j++)
 		{
-			std::clog << "\rScanlines remaining: " << (imageHeight - i) << ' ' << std::flush;
-			for (int j = 0; j < imageWidth; j++)
+			std::clog << "\rScanlines remaining: " << (imageHeight - j) << ' ' << std::flush;
+			for (int i = 0; i < imageWidth; i++)
 			{
-				auto pixelCenter{ pixel00 + j * pixelDeltaU + i * pixelDeltaV };
-				auto rayDir{ pixelCenter - center };
-
-				ray r(center, rayDir);
-				vec3 pixelColor{ rayColor(r, world) };
-
-				writeColor(std::cout, pixelColor);
+				vec3 pixelColor{};
+				for (int sample = 0; sample < pixelSamples; sample++)
+				{
+					ray r{ getRay(i, j) };
+					pixelColor += rayColor(r, world);
+				}
+				writeColor(std::cout, pixelColor * pixelSampleScale);
 			}
 		}
 
@@ -44,11 +45,13 @@ private:
 	vec3 pixel00{};
 	vec3 pixelDeltaU{};
 	vec3 pixelDeltaV{};
+	double pixelSampleScale{};
 
 	void initialize()
 	{
 		imageHeight = int(imageWidth / aspectRatio);
 		imageHeight = imageHeight < 1 ? 1 : imageHeight;
+		pixelSampleScale = 1.0 / pixelSamples;
 
 		auto focalLength{ 1.0 };
 		auto viewportHeight{ 2.0 };
@@ -76,4 +79,17 @@ private:
 		return (1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0);
 	}
 
+	vec3 sampleSquare() const
+	{
+		return vec3(randomDouble() - 0.5, randomDouble() - 0.5, 0);
+	}
+
+	ray getRay(int i, int j) const
+	{
+		auto offset{ sampleSquare() };
+		auto pixelSample{ pixel00 + (i + offset.x()) * pixelDeltaU + (j + offset.y()) * pixelDeltaV };
+		auto rayDir{ pixelSample - center };
+
+		return ray(center, rayDir);
+	}
 };

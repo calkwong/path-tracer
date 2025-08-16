@@ -12,6 +12,7 @@ public:
 	double aspectRatio{ 1.0 };
 	int imageWidth{ 100 };
 	int pixelSamples{ 10 };
+	int maxDepth{ 100 };
 
 	Camera() {}
 
@@ -30,7 +31,7 @@ public:
 				for (int sample = 0; sample < pixelSamples; sample++)
 				{
 					ray r{ getRay(i, j) };
-					pixelColor += rayColor(r, world);
+					pixelColor += rayColor(r, maxDepth, world);
 				}
 				writeColor(std::cout, pixelColor * pixelSampleScale);
 			}
@@ -67,12 +68,19 @@ private:
 		pixel00 = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
 	}
 
-	vec3 rayColor(const ray& r, const Hittable& world)
+	vec3 rayColor(const ray& r, int depth, const Hittable& world)
 	{
+		if (depth <= 0)
+			return vec3(0);
+
 		HitRecord rec{};
 
-		if (world.hit(r, 0, infinity, rec))
-			return 0.5 * (rec.normal + vec3(1));
+		if (world.hit(r, 0.001, infinity, rec)) // account for shadow acne
+		{
+			vec3 unitVec{ randomUnitVector(-1, 1) };
+			auto scatter{ unitVec + rec.normal }; // not normalized but acceptable, max length of 2
+			return 0.5 * rayColor(ray(rec.point, scatter), depth - 1, world);
+		}
 
 		vec3 dir{ normalize(r.direction()) };
 		auto a{ 0.5 * (dir.y() + 1.0) };

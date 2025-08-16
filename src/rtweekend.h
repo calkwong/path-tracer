@@ -27,12 +27,12 @@ inline double randomDouble(double min, double max)
 
 inline vec3 randomVector()
 {
-    auto v{ vec3(randomDouble(), randomDouble(), randomDouble()) };
+    return vec3(randomDouble(), randomDouble(), randomDouble());
 }
 
 inline vec3 randomVector(double min, double max)
 {
-    auto v{ vec3(randomDouble(min, max), randomDouble(min, max), randomDouble(min, max)) };
+    return vec3(randomDouble(min, max), randomDouble(min, max), randomDouble(min, max));
 }
 
 inline vec3 randomUnitVector()
@@ -55,4 +55,10 @@ inline vec3 randomUnitVector(double min, double max)
         if (lensq > 1e-160)
             return v / std::sqrt(lensq);
     }
+}
+
+inline double linearToGamma(double a)
+{
+    auto gamma{ 2.2 };
+    return std::pow(a, 1.0 / gamma);
 }

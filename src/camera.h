@@ -12,7 +12,7 @@ public:
 	double aspectRatio{ 1.0 };
 	int imageWidth{ 100 };
 	int pixelSamples{ 10 };
-	int maxDepth{ 100 };
+	int maxDepth{ 10 };
 
 	Camera() {}
 

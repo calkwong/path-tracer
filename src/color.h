@@ -10,6 +10,10 @@ inline void writeColor(std::ostream& out, const vec3& color)
 	auto g{ color.y() };
 	auto b{ color.z() };
 
+	r = linearToGamma(r);
+	g = linearToGamma(g);
+	b = linearToGamma(b);
+
 	int ir{ static_cast<int>(r * 255.999) };
 	int ig{ static_cast<int>(g * 255.999) };
 	int ib{ static_cast<int>(b * 255.999) };

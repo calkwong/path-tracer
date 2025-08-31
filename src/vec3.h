@@ -69,6 +69,12 @@ public:
 	{
 		return data[0] * data[0] + data[1] * data[1] + data[2] * data[2];
 	}
+
+	bool nearZero() const
+	{
+		auto threshold{ 1e-8 };
+		return (std::fabs(data[0]) < threshold) && (std::fabs(data[1]) < threshold) && (std::fabs(data[2]) < threshold);
+	}
 };
 
 inline std::ostream& operator<<(std::ostream& out, const vec3& v)
@@ -128,4 +134,9 @@ inline vec3 normalize(const vec3& v)
 inline void print(const vec3& v)
 {
 	std::cout << v[0] << ' ' << v[1] << ' ' << v[2] << '\n';
+}
+
+inline vec3 reflect(const vec3& v, const vec3& n)
+{
+	return v - 2.0 * dot(v, n) * n;
 }

@@ -3,11 +3,14 @@
 #include "vec3.h"
 #include "ray.h"
 
+class Material;
+
 class HitRecord
 {
 public:
 	vec3 point{};
 	vec3 normal{};
+	std::shared_ptr<Material> mat{};
 	double t{}; // computed from root
 	bool frontFace{};
 

@@ -5,6 +5,7 @@
 #include "hittable.h"
 #include "rtweekend.h"
 #include "color.h"
+#include "material.h"
 
 class Camera
 {
@@ -77,9 +78,11 @@ private:
 
 		if (world.hit(r, 0.001, infinity, rec)) // account for shadow acne
 		{
-			vec3 unitVec{ randomUnitVector(-1, 1) };
-			auto scatter{ unitVec + rec.normal }; // not normalized but acceptable, max length of 2
-			return 0.5 * rayColor(ray(rec.point, scatter), depth - 1, world);
+			ray scattered{};
+			vec3 attenuation{};
+			if (rec.mat->scatter(r, rec, attenuation, scattered))
+				return attenuation * rayColor(scattered, depth - 1, world);
+			return vec3(0.0);
 		}
 
 		vec3 dir{ normalize(r.direction()) };

@@ -4,11 +4,13 @@
 #include "ray.h"
 #include "hittable.h"
 
+class Material;
+
 class Sphere : public Hittable
 {
 public:
-	Sphere(const vec3& center, double radius)
-		: center{ center }, radius{ std::fmax(0, radius) }
+	Sphere(const vec3& center, double radius, std::shared_ptr<Material> mat)
+		: center{ center }, radius{ std::fmax(0, radius) }, mat{mat}
 	{
 	}
 
@@ -38,6 +40,7 @@ public:
 		rec.point = r.at(rec.t);
 		auto outwardNormal = (rec.point - center) / radius;
 		rec.setFaceNormal(r, outwardNormal);
+		rec.mat = mat;
 
 		return true;
 	}
@@ -45,20 +48,5 @@ public:
 private:
 	vec3 center{};
 	double radius{};
+	std::shared_ptr<Material> mat{};
 };
-
-double hitSphere(const vec3 center, double radius, const ray& r)
-{
-	// Section 5.1, 6.2 for proof
-	auto d{ r.direction() };
-	auto cq{ center - r.origin() };
-	auto a{ d.lengthSquared() };
-	auto h{ dot(d, cq) };
-	auto c{ cq.lengthSquared() - radius * radius };
-	auto discriminant{ h * h - a * c };
-
-	if (discriminant < 0) // no solution
-		return -1.0;
-	else
-		return (h - std::sqrt(discriminant)) / a; // assume smallest t preferred for now
-}

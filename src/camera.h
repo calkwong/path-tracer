@@ -31,7 +31,7 @@ public:
 				vec3 pixelColor{};
 				for (int sample = 0; sample < pixelSamples; sample++)
 				{
-					ray r{ getRay(i, j) };
+					ray r{ getRay(i, j) }; // (!) not normalized
 					pixelColor += rayColor(r, maxDepth, world);
 				}
 				writeColor(std::cout, pixelColor * pixelSampleScale);
@@ -65,14 +65,18 @@ private:
 		pixelDeltaU = viewportU / imageWidth;
 		pixelDeltaV = viewportV / imageHeight;
 
-		auto viewportUpperLeft{ center - vec3(0, 0, focalLength) - 0.5 * (viewportU + viewportV) };
+		auto viewportUpperLeft{ 
+			center 
+			- vec3(0, 0, focalLength) 
+			- 0.5 * (viewportU + viewportV) 
+		};
 		pixel00 = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
 	}
 
 	vec3 rayColor(const ray& r, int depth, const Hittable& world)
 	{
 		if (depth <= 0)
-			return vec3(0);
+			return vec3(0.0);
 
 		HitRecord rec{};
 
@@ -98,7 +102,11 @@ private:
 	ray getRay(int i, int j) const
 	{
 		auto offset{ sampleSquare() };
-		auto pixelSample{ pixel00 + (i + offset.x()) * pixelDeltaU + (j + offset.y()) * pixelDeltaV };
+		auto pixelSample{ 
+			pixel00 
+			+ (i + offset.x()) * pixelDeltaU 
+			+ (j + offset.y()) * pixelDeltaV 
+		};
 		auto rayDir{ pixelSample - center };
 
 		return ray(center, rayDir);

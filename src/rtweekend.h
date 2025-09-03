@@ -57,6 +57,16 @@ inline vec3 randomUnitVector(double min, double max)
     }
 }
 
+inline vec3 randomUnitCircle()
+{
+    while (true)
+    {
+        vec3 v{ randomDouble(-1, 1), randomDouble(-1, 1), 0 };
+        if (v.lengthSquared() < 1)
+            return v;
+    }
+}
+
 inline double linearToGamma(double a)
 {
     auto gamma{ 2.2 };

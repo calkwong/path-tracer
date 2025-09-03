@@ -18,6 +18,9 @@ public:
 	vec3 lookAt{ vec3(0., 0., -1) };
 	vec3 worldUp{ vec3(0., 1., 0.) };
 
+	double defocusAngle{};
+	double focusDist{ 10.0 };
+
 	Camera() {} // (!) redundant default constructed?
 
 	void render(const Hittable& world)
@@ -52,6 +55,8 @@ private:
 	vec3 right{};
 	vec3 up{};
 	vec3 front{};
+	vec3 defocusDiskU{};
+	vec3 defocusDiskV{};
 
 	double pixelSampleScale{};
 	int imageHeight{};
@@ -64,10 +69,9 @@ private:
 
 		center = lookFrom;
 
-		auto focalLength{ (lookFrom - lookAt).length()};
 		auto theta{ degreesToRadians(vfov) };
 		auto h{ std::tan(theta / 2.0) };
-		auto viewportHeight{ 2.0 * h * focalLength};
+		auto viewportHeight{ 2.0 * h * focusDist};
 		auto viewportWidth{ viewportHeight * imageWidth / imageHeight };
 
 		front = normalize(lookFrom - lookAt);
@@ -82,10 +86,14 @@ private:
 
 		auto viewportUpperLeft{ 
 			center 
-			- (focalLength * front) 
+			- (focusDist * front) 
 			- 0.5 * (viewportU + viewportV) 
 		};
 		pixel00 = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
+
+		double defocusRadius{ focusDist * std::tan(degreesToRadians(defocusAngle / 2.0)) };
+		defocusDiskU = right * defocusRadius;
+		defocusDiskV = up * defocusRadius;
 	}
 
 	vec3 rayColor(const ray& r, int depth, const Hittable& world)
@@ -122,8 +130,18 @@ private:
 			+ (i + offset.x()) * pixelDeltaU 
 			+ (j + offset.y()) * pixelDeltaV 
 		};
-		auto rayDir{ pixelSample - center };
+		vec3 rayOrigin{ (defocusAngle <= 0) ? center : defocusDiskSample() };
+		auto rayDir{ pixelSample - rayOrigin };
 
-		return ray(center, rayDir);
+		return ray(rayOrigin, rayDir);
+	}
+
+	vec3 defocusDiskSample() const
+	{
+		vec3 sample{ randomUnitCircle() };
+
+		return center 
+			+ defocusDiskU * sample[0]
+			+ defocusDiskV * sample[1];
 	}
 };

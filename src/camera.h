@@ -6,7 +6,6 @@
 #include "rtweekend.h"
 #include "color.h"
 #include "material.h"
-
 class Camera
 {
 public:
@@ -14,8 +13,12 @@ public:
 	int imageWidth{ 100 };
 	int pixelSamples{ 10 };
 	int maxDepth{ 10 };
+	double vfov{ 90.0 };
+	vec3 lookFrom{ vec3(0.) };
+	vec3 lookAt{ vec3(0., 0., -1) };
+	vec3 worldUp{ vec3(0., 1., 0.) };
 
-	Camera() {}
+	Camera() {} // (!) redundant default constructed?
 
 	void render(const Hittable& world)
 	{
@@ -42,12 +45,16 @@ public:
 	}
 
 private:
-	int imageHeight{};
 	vec3 center{};
 	vec3 pixel00{};
 	vec3 pixelDeltaU{};
 	vec3 pixelDeltaV{};
+	vec3 right{};
+	vec3 up{};
+	vec3 front{};
+
 	double pixelSampleScale{};
+	int imageHeight{};
 
 	void initialize()
 	{
@@ -55,19 +62,27 @@ private:
 		imageHeight = imageHeight < 1 ? 1 : imageHeight;
 		pixelSampleScale = 1.0 / pixelSamples;
 
-		auto focalLength{ 1.0 };
-		auto viewportHeight{ 2.0 };
+		center = lookFrom;
+
+		auto focalLength{ (lookFrom - lookAt).length()};
+		auto theta{ degreesToRadians(vfov) };
+		auto h{ std::tan(theta / 2.0) };
+		auto viewportHeight{ 2.0 * h * focalLength};
 		auto viewportWidth{ viewportHeight * imageWidth / imageHeight };
 
-		auto viewportU{ vec3(viewportWidth, 0, 0) };
-		auto viewportV{ vec3(0, -viewportHeight, 0) };
+		front = normalize(lookFrom - lookAt);
+		right = normalize(cross(worldUp, front));
+		up = normalize(cross(front, right));
+
+		auto viewportU{ viewportWidth * right };
+		auto viewportV{ -viewportHeight * up }; // (!) why negative again? see before positionable-camera
 
 		pixelDeltaU = viewportU / imageWidth;
 		pixelDeltaV = viewportV / imageHeight;
 
 		auto viewportUpperLeft{ 
 			center 
-			- vec3(0, 0, focalLength) 
+			- (focalLength * front) 
 			- 0.5 * (viewportU + viewportV) 
 		};
 		pixel00 = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);

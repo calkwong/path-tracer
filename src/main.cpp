@@ -34,6 +34,10 @@ int main()
 	cam.pixelSamples = 10;
 	cam.maxDepth = 50;
 
+	cam.vfov = 20;
+	cam.lookFrom = vec3(-2, 2, 1);
+	cam.lookAt = vec3(0, 0, -1);
+
 	cam.render(world);
 
 	return 0;

@@ -31,14 +31,14 @@ int main()
 	Camera cam{};
 	cam.aspectRatio = 16.0 / 9.0;
 	cam.imageWidth = 400;
-	cam.pixelSamples = 10;
+	cam.pixelSamples = 50;
 	cam.maxDepth = 50;
 
-	cam.vfov = 90;
+	cam.vfov = 20;
 	cam.lookFrom = vec3(-2, 2, 1);
 	cam.lookAt = vec3(0, 0, -1);
 
-	cam.defocusAngle = 10.0;
+	cam.defocusAngle = 0.0;
 	cam.focusDist = 3.4;
 
 	cam.render(world);

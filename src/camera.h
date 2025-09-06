@@ -6,6 +6,9 @@
 #include "rtweekend.h"
 #include "color.h"
 #include "material.h"
+
+#include "tracy/Tracy.hpp"
+
 class Camera
 {
 public:
@@ -31,6 +34,7 @@ public:
 
 		for (int j = 0; j < imageHeight; j++)
 		{
+			FrameMark;
 			std::clog << "\rScanlines remaining: " << (imageHeight - j) << ' ' << std::flush;
 			for (int i = 0; i < imageWidth; i++)
 			{
@@ -98,6 +102,7 @@ private:
 
 	vec3 rayColor(const ray& r, int depth, const Hittable& world)
 	{
+		ZoneScoped;
 		if (depth <= 0)
 			return vec3(0.0);
 
@@ -124,6 +129,7 @@ private:
 
 	ray getRay(int i, int j) const
 	{
+		ZoneScoped;
 		auto offset{ sampleSquare() };
 		auto pixelSample{ 
 			pixel00 

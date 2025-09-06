@@ -5,6 +5,8 @@
 #include <vector>
 #include <memory>
 
+#include "tracy/Tracy.hpp"
+
 class HittableList : public Hittable
 {
 public:
@@ -29,6 +31,8 @@ public:
 
 	bool hit(const ray& r, double tMin, double tMax, HitRecord& rec) const override
 	{ 
+		ZoneScoped;
+
 		HitRecord tempRec{};
 		bool hitAnything{ false };
 		auto closestSoFar{ tMax };

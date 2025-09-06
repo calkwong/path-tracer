@@ -4,6 +4,8 @@
 #include "ray.h"
 #include "hittable.h"
 
+#include "tracy/Tracy.hpp"
+
 class Material;
 
 class Sphere : public Hittable
@@ -16,6 +18,8 @@ public:
 
 	bool hit(const ray& r, double tMin, double tMax, HitRecord& rec) const override
 	{
+		ZoneScoped;
+
 		// Section 5.1, 6.2 for proof
 		auto d{ r.direction() };
 		auto cq{ center - r.origin() };

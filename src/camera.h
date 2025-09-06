@@ -34,10 +34,10 @@ public:
 
 		for (int j = 0; j < imageHeight; j++)
 		{
-			FrameMark;
 			std::clog << "\rScanlines remaining: " << (imageHeight - j) << ' ' << std::flush;
 			for (int i = 0; i < imageWidth; i++)
 			{
+				FrameMark;
 				vec3 pixelColor{};
 				for (int sample = 0; sample < pixelSamples; sample++)
 				{

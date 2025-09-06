@@ -37,10 +37,10 @@ public:
 			std::clog << "\rScanlines remaining: " << (imageHeight - j) << ' ' << std::flush;
 			for (int i = 0; i < imageWidth; i++)
 			{
-				FrameMark;
 				vec3 pixelColor{};
 				for (int sample = 0; sample < pixelSamples; sample++)
 				{
+					ZoneScopedN("Pixel Sample");
 					ray r{ getRay(i, j) }; // (!) not normalized
 					pixelColor += rayColor(r, maxDepth, world);
 				}
@@ -129,7 +129,6 @@ private:
 
 	ray getRay(int i, int j) const
 	{
-		ZoneScoped;
 		auto offset{ sampleSquare() };
 		auto pixelSample{ 
 			pixel00 

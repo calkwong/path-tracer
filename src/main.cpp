@@ -12,8 +12,11 @@
 #include <iostream>
 #include <memory>
 
+#include "tracy/Tracy.hpp"
+
 int main()
 {
+	ZoneScoped;
 	HittableList world{};
 
 	auto material_ground = std::make_shared<Material>(vec3(0.8, 0.8, 0.0), 0.0);

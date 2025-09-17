@@ -9,6 +9,13 @@
 
 #include "tracy/Tracy.hpp"
 
+#include <ranges>
+#include <execution>
+#include <algorithm>
+
+#define TILE 0
+#define WRITE_COLOR 0
+
 class Camera
 {
 public:
@@ -32,21 +39,107 @@ public:
 
 		std::cout << "P3\n" << imageWidth << " " << imageHeight << "\n255\n";
 
+		
+		std::vector<vec3> colors(imageWidth * imageHeight);
+
+		if (TILE == 0)
+		{
+			std::vector<int> xs{};
+			std::vector<int> ys{};
+			for (int i = 0; i < imageWidth; i++)
+			{
+				xs.push_back(i);
+			}
+			for (int i = 0; i < imageHeight; i++)
+			{
+				ys.push_back(i);
+			}
+			auto tuples = std::views::cartesian_product(xs, ys);
+
+			std::for_each(std::execution::par, tuples.begin(), tuples.end(),
+				[&](const auto& pair) {
+					const auto& [x, y] = pair;
+					vec3 pixelColor{};
+					ZoneScopedN("Pixel");
+					for (int sample = 0; sample < pixelSamples; sample++)
+					{
+						ray r{ getRay(x, y) }; // (!) not normalized
+						pixelColor += rayColor(r, maxDepth, world);
+					}
+					//colors[y * imageWidth + x] = pixelColor * pixelSampleScale;
+				});
+		}
+		else if (TILE == 1)
+		// multithreading horizontal 'tile' 
+		{
+			struct Tile
+			{
+				int x{};
+				int y{};
+			};
+
+			std::vector<std::vector<Tile>> tiles(imageHeight, std::vector<Tile>(imageWidth));
+			for (int y = 0; y < imageHeight; y++)
+			{
+				std::vector<Tile> tile(imageWidth);
+				for (size_t x = 0; x < imageWidth; x++)
+				{
+					Tile t{};
+					t.x = x;
+					t.y = y;
+					tile[x] = t;
+				}
+				tiles[y] = tile;
+			}
+
+			std::for_each(std::execution::par, tiles.begin(), tiles.end(),
+				[&](const auto& tile) {
+					ZoneScopedN("Unit of work");
+					for (const auto& pixel : tile)
+					{
+						ZoneScopedN("Pixel");
+						int x = pixel.x;
+						int y = pixel.y;
+						vec3 pixelColor{};
+						for (int sample = 0; sample < pixelSamples; sample++)
+						{
+							ray r{ getRay(x, y) }; // (!) not normalized
+							pixelColor += rayColor(r, maxDepth, world);
+						}
+
+						// store colors
+						auto idx = y * imageWidth + x;
+						//colors[idx] = pixelColor * pixelSampleScale;
+					}
+				});
+		}
+
+		// write colors
+		if (WRITE_COLOR == 1)
+		{
+			for (size_t i = 0; i < colors.size(); i++)
+			{
+				writeColor(std::cout, colors[i]);
+			}
+		}
+
+		/*
 		for (int j = 0; j < imageHeight; j++)
 		{
 			std::clog << "\rScanlines remaining: " << (imageHeight - j) << ' ' << std::flush;
 			for (int i = 0; i < imageWidth; i++)
 			{
 				vec3 pixelColor{};
+				ZoneScopedN("Pixel");
 				for (int sample = 0; sample < pixelSamples; sample++)
 				{
-					ZoneScopedN("Pixel Sample");
 					ray r{ getRay(i, j) }; // (!) not normalized
 					pixelColor += rayColor(r, maxDepth, world);
 				}
-				writeColor(std::cout, pixelColor * pixelSampleScale);
+				//writeColor(std::cout, pixelColor * pixelSampleScale);
 			}
 		}
+		*/
 
 		std::clog << "\rDone.                 \n";
 	}
@@ -102,7 +195,6 @@ private:
 
 	vec3 rayColor(const ray& r, int depth, const Hittable& world)
 	{
-		ZoneScoped;
 		if (depth <= 0)
 			return vec3(0.0);
 

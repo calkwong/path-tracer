@@ -5,8 +5,6 @@
 #include "rtweekend.h"
 #include "hittable.h"
 
-#include "tracy/Tracy.hpp"
-
 class Material
 {
 public:
@@ -17,7 +15,6 @@ public:
 
 	bool scatter(const ray& r, const HitRecord& rec, vec3& attenuation, ray& scattered)
 	{
-		ZoneScoped;
 		vec3 direction{};
 
 		if (!dielectric)

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 
-class vec3
+class alignas(64) vec3
 {
 public:
 	std::array<double, 3> data{};

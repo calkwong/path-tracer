@@ -14,7 +14,7 @@ public:
 	{
 	}
 
-	bool hit(const ray& r, double tMin, double tMax, HitRecord& rec) const override
+	bool hit(const ray& r, double tMin, double tMax, HitRecord& rec) const 
 	{
 		// Section 5.1, 6.2 for proof
 		auto d{ r.direction() };

@@ -12,9 +12,17 @@
 #include <ranges>
 #include <execution>
 #include <algorithm>
+#include <mutex>
+#include <thread>
 
-#define TILE 0
+// NAIVE, SCANLINE FOREACH, SCANLINE THREADS, SINGLE THREADED
+#define TILE 3
 #define WRITE_COLOR 0
+#define NO_THREADS 4
+
+int counter{0};
+std::mutex myMutex;
+bool renderingComplete{ false };
 
 class Camera
 {
@@ -39,8 +47,8 @@ public:
 
 		std::cout << "P3\n" << imageWidth << " " << imageHeight << "\n255\n";
 
-		
-		std::vector<vec3> colors(imageWidth * imageHeight);
+		//std::vector<vec3> colors(imageWidth * imageHeight);
+		aligned_vector<vec3> colors(imageWidth * imageHeight);
 
 		if (TILE == 0)
 		{
@@ -66,35 +74,34 @@ public:
 						ray r{ getRay(x, y) }; // (!) not normalized
 						pixelColor += rayColor(r, maxDepth, world);
 					}
-					//colors[y * imageWidth + x] = pixelColor * pixelSampleScale;
+					colors[y * imageWidth + x] = pixelColor * pixelSampleScale;
 				});
 		}
 		else if (TILE == 1)
-		// multithreading horizontal 'tile' 
+			// multithreading horizontal 'tile' 
 		{
-			struct Tile
+			struct alignas(64) Tile
 			{
 				int x{};
 				int y{};
 			};
 
-			std::vector<std::vector<Tile>> tiles(imageHeight, std::vector<Tile>(imageWidth));
-			for (int y = 0; y < imageHeight; y++)
+			aligned_vector<aligned_vector<Tile>> tiles(imageHeight);
+
+			for (size_t i = 0; i < imageHeight; i++)
 			{
-				std::vector<Tile> tile(imageWidth);
-				for (size_t x = 0; x < imageWidth; x++)
+				tiles[i] = aligned_vector<Tile>(imageWidth);
+
+				for (size_t j = 0; j < imageWidth; j++)
 				{
-					Tile t{};
-					t.x = x;
-					t.y = y;
-					tile[x] = t;
+					tiles[i][j].x = j;
+					tiles[i][j].y = i;
 				}
-				tiles[y] = tile;
 			}
 
 			std::for_each(std::execution::par, tiles.begin(), tiles.end(),
 				[&](const auto& tile) {
-					ZoneScopedN("Unit of work");
+					//ZoneScopedN("Unit of work");
 					for (const auto& pixel : tile)
 					{
 						ZoneScopedN("Pixel");
@@ -109,9 +116,89 @@ public:
 
 						// store colors
 						auto idx = y * imageWidth + x;
-						//colors[idx] = pixelColor * pixelSampleScale;
+						colors[idx] = pixelColor * pixelSampleScale;
 					}
 				});
+
+		}
+		else if (TILE == 2)
+		{
+			struct alignas(64) Tile
+			{
+				int x{};
+				int y{};
+			};
+
+			aligned_vector<aligned_vector<Tile>> tiles(imageHeight);
+
+			for (size_t i = 0; i < imageHeight; i++)
+			{
+				tiles[i] = aligned_vector<Tile>(imageWidth);
+
+				for (size_t j = 0; j < imageWidth; j++)
+				{
+					tiles[i][j].x = j;
+					tiles[i][j].y = i;
+				}
+			}
+
+			auto threadWork = [&]() {
+				while (!renderingComplete)
+				{
+					myMutex.lock(); // acquire lock
+					auto currentTile = tiles[counter];
+					counter++;
+					if (counter == imageHeight)
+						renderingComplete = true;
+					myMutex.unlock();
+					for (const auto& pixel : currentTile)
+					{
+						ZoneScopedN("Pixel");
+						int x = pixel.x;
+						int y = pixel.y;
+						vec3 pixelColor{};
+						for (int sample = 0; sample < pixelSamples; sample++)
+						{
+							ray r{ getRay(x, y) }; // (!) not normalized
+							pixelColor += rayColor(r, maxDepth, world);
+						}
+
+						// store colors
+						auto idx = y * imageWidth + x;
+						colors[idx] = pixelColor * pixelSampleScale;
+					}
+				}
+			};
+
+			std::vector<std::thread> threads(NO_THREADS);
+
+			for (auto& thread : threads)
+			{
+				thread = std::thread(threadWork);
+			}
+
+			for (auto& thread : threads)
+			{
+				thread.join();
+			}
+		}
+		else
+		{
+			for (int j = 0; j < imageHeight; j++)
+			{
+				std::clog << "\rScanlines remaining: " << (imageHeight - j) << ' ' << std::flush;
+				for (int i = 0; i < imageWidth; i++)
+				{
+					vec3 pixelColor{};
+					ZoneScopedN("Pixel");
+					for (int sample = 0; sample < pixelSamples; sample++)
+					{
+						ray r{ getRay(i, j) }; // (!) not normalized
+						pixelColor += rayColor(r, maxDepth, world);
+					}
+					//writeColor(std::cout, pixelColor * pixelSampleScale);
+				}
+			}
 		}
 
 		// write colors
@@ -123,23 +210,8 @@ public:
 			}
 		}
 
-		/*
-		for (int j = 0; j < imageHeight; j++)
-		{
-			std::clog << "\rScanlines remaining: " << (imageHeight - j) << ' ' << std::flush;
-			for (int i = 0; i < imageWidth; i++)
-			{
-				vec3 pixelColor{};
-				ZoneScopedN("Pixel");
-				for (int sample = 0; sample < pixelSamples; sample++)
-				{
-					ray r{ getRay(i, j) }; // (!) not normalized
-					pixelColor += rayColor(r, maxDepth, world);
-				}
-				//writeColor(std::cout, pixelColor * pixelSampleScale);
-			}
-		}
-		*/
+		
+		
 
 		std::clog << "\rDone.                 \n";
 	}
@@ -221,11 +293,16 @@ private:
 
 	ray getRay(int i, int j) const
 	{
-		auto offset{ sampleSquare() };
-		auto pixelSample{ 
-			pixel00 
-			+ (i + offset.x()) * pixelDeltaU 
-			+ (j + offset.y()) * pixelDeltaV 
+		//auto offset{ sampleSquare() };
+		//auto pixelSample{ 
+		//	pixel00 
+		//	+ (i + offset.x()) * pixelDeltaU 
+		//	+ (j + offset.y()) * pixelDeltaV 
+		//};
+		auto pixelSample{
+			pixel00
+			+ i * pixelDeltaU
+			+ j * pixelDeltaV
 		};
 		vec3 rayOrigin{ (defocusAngle <= 0) ? center : defocusDiskSample() };
 		auto rayDir{ pixelSample - rayOrigin };

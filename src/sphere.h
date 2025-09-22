@@ -4,31 +4,33 @@
 #include "ray.h"
 #include "hittable.h"
 
+#include "tracy/Tracy.hpp"
+
 class Material;
 
 class Sphere : public Hittable
 {
 public:
-	Sphere(const vec3& center, double radius, std::shared_ptr<Material> mat)
-		: center{ center }, radius{ std::fmax(0, radius) }, mat{mat}
+	Sphere(const vec3& center, float radius, Material* material)
+		: center{ center }, radius{ std::fmax(0.f, radius) }, mat{ material }
 	{
 	}
 
-	bool hit(const ray& r, double tMin, double tMax, HitRecord& rec) const 
+	bool hit(const ray& r, float tMin, float tMax, HitRecord& rec) const override
 	{
 		// Section 5.1, 6.2 for proof
-		auto d{ r.direction() };
-		auto cq{ center - r.origin() };
-		auto a{ d.lengthSquared() };
-		auto h{ dot(d, cq) };
-		auto c{ cq.lengthSquared() - radius * radius };
-		auto discriminant{ h * h - a * c };
+		const vec3 d{ r.direction() };
+		const vec3 cq{ center - r.origin() };
+		const float a{ d.lengthSquared() };
+		const float h{ dot(d, cq) };
+		const float c{ cq.lengthSquared() - radius * radius };
+		const float discriminant{ h * h - a * c };
 
-		if (discriminant < 0)
+		if (discriminant < 0.)
 			return false;
 
-		auto sqrtd{ std::sqrt(discriminant) };
-		auto root{ (h - sqrtd) / a }; 
+		const float sqrtd{ std::sqrt(discriminant) };
+		float root{ (h - sqrtd) / a }; 
 		if (root <= tMin || root >= tMax)
 		{
 			root = (h + sqrtd) / a;
@@ -38,15 +40,14 @@ public:
 
 		rec.t = root;
 		rec.point = r.at(rec.t);
-		auto outwardNormal = (rec.point - center) / radius;
-		rec.setFaceNormal(r, outwardNormal);
-		rec.mat = mat;
+		rec.normal = (rec.point - center) / radius; // (!) always normalized
+		rec.mat = mat.get();
 
 		return true;
 	}
 
 private:
 	vec3 center{};
-	double radius{};
-	std::shared_ptr<Material> mat{};
+	float radius{};
+	std::unique_ptr<Material> mat;
 };

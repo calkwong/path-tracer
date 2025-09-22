@@ -9,305 +9,79 @@
 
 #include "tracy/Tracy.hpp"
 
-#include <ranges>
-#include <execution>
-#include <algorithm>
-#include <mutex>
-#include <thread>
-
-// NAIVE, SCANLINE FOREACH, SCANLINE THREADS, SINGLE THREADED
-#define TILE 3
-#define WRITE_COLOR 0
-#define NO_THREADS 4
-
-int counter{0};
-std::mutex myMutex;
-bool renderingComplete{ false };
-
 class Camera
 {
 public:
-	double aspectRatio{ 1.0 };
-	int imageWidth{ 100 };
-	int pixelSamples{ 10 };
-	int maxDepth{ 10 };
-	double vfov{ 90.0 };
-	vec3 lookFrom{ vec3(0.) };
-	vec3 lookAt{ vec3(0., 0., -1) };
-	vec3 worldUp{ vec3(0., 1., 0.) };
-
-	double defocusAngle{};
-	double focusDist{ 10.0 };
-
-	Camera() {} // (!) redundant default constructed?
-
-	void render(const Hittable& world)
+	static Camera init(
+		const vec3& lookFrom,
+		const vec3& lookAt,
+		const vec3& worldUp,
+		float vfov, float focusDist, float defocusAngle, 
+		int imageWidth, int imageHeight, float aspectRatio)
 	{
-		initialize();
+		const vec3 center = lookFrom;
+		const float theta = degreesToRadians(vfov);
+		const float h = std::tan(theta / 2.0);
+		const float viewportHeight = 2.0 * h * focusDist;
+		const float viewportWidth = viewportHeight * aspectRatio;
 
-		std::cout << "P3\n" << imageWidth << " " << imageHeight << "\n255\n";
+		const vec3 front = normalize(lookFrom - lookAt);
+		const vec3 right = normalize(cross(worldUp, front));
+		const vec3 up = normalize(cross(front, right));
 
-		//std::vector<vec3> colors(imageWidth * imageHeight);
-		aligned_vector<vec3> colors(imageWidth * imageHeight);
-
-		if (TILE == 0)
-		{
-			std::vector<int> xs{};
-			std::vector<int> ys{};
-			for (int i = 0; i < imageWidth; i++)
-			{
-				xs.push_back(i);
-			}
-			for (int i = 0; i < imageHeight; i++)
-			{
-				ys.push_back(i);
-			}
-			auto tuples = std::views::cartesian_product(xs, ys);
-
-			std::for_each(std::execution::par, tuples.begin(), tuples.end(),
-				[&](const auto& pair) {
-					const auto& [x, y] = pair;
-					vec3 pixelColor{};
-					ZoneScopedN("Pixel");
-					for (int sample = 0; sample < pixelSamples; sample++)
-					{
-						ray r{ getRay(x, y) }; // (!) not normalized
-						pixelColor += rayColor(r, maxDepth, world);
-					}
-					colors[y * imageWidth + x] = pixelColor * pixelSampleScale;
-				});
-		}
-		else if (TILE == 1)
-			// multithreading horizontal 'tile' 
-		{
-			struct alignas(64) Tile
-			{
-				int x{};
-				int y{};
-			};
-
-			aligned_vector<aligned_vector<Tile>> tiles(imageHeight);
-
-			for (size_t i = 0; i < imageHeight; i++)
-			{
-				tiles[i] = aligned_vector<Tile>(imageWidth);
-
-				for (size_t j = 0; j < imageWidth; j++)
-				{
-					tiles[i][j].x = j;
-					tiles[i][j].y = i;
-				}
-			}
-
-			std::for_each(std::execution::par, tiles.begin(), tiles.end(),
-				[&](const auto& tile) {
-					//ZoneScopedN("Unit of work");
-					for (const auto& pixel : tile)
-					{
-						ZoneScopedN("Pixel");
-						int x = pixel.x;
-						int y = pixel.y;
-						vec3 pixelColor{};
-						for (int sample = 0; sample < pixelSamples; sample++)
-						{
-							ray r{ getRay(x, y) }; // (!) not normalized
-							pixelColor += rayColor(r, maxDepth, world);
-						}
-
-						// store colors
-						auto idx = y * imageWidth + x;
-						colors[idx] = pixelColor * pixelSampleScale;
-					}
-				});
-
-		}
-		else if (TILE == 2)
-		{
-			struct alignas(64) Tile
-			{
-				int x{};
-				int y{};
-			};
-
-			aligned_vector<aligned_vector<Tile>> tiles(imageHeight);
-
-			for (size_t i = 0; i < imageHeight; i++)
-			{
-				tiles[i] = aligned_vector<Tile>(imageWidth);
-
-				for (size_t j = 0; j < imageWidth; j++)
-				{
-					tiles[i][j].x = j;
-					tiles[i][j].y = i;
-				}
-			}
-
-			auto threadWork = [&]() {
-				while (!renderingComplete)
-				{
-					myMutex.lock(); // acquire lock
-					auto currentTile = tiles[counter];
-					counter++;
-					if (counter == imageHeight)
-						renderingComplete = true;
-					myMutex.unlock();
-					for (const auto& pixel : currentTile)
-					{
-						ZoneScopedN("Pixel");
-						int x = pixel.x;
-						int y = pixel.y;
-						vec3 pixelColor{};
-						for (int sample = 0; sample < pixelSamples; sample++)
-						{
-							ray r{ getRay(x, y) }; // (!) not normalized
-							pixelColor += rayColor(r, maxDepth, world);
-						}
-
-						// store colors
-						auto idx = y * imageWidth + x;
-						colors[idx] = pixelColor * pixelSampleScale;
-					}
-				}
-			};
-
-			std::vector<std::thread> threads(NO_THREADS);
-
-			for (auto& thread : threads)
-			{
-				thread = std::thread(threadWork);
-			}
-
-			for (auto& thread : threads)
-			{
-				thread.join();
-			}
-		}
-		else
-		{
-			for (int j = 0; j < imageHeight; j++)
-			{
-				std::clog << "\rScanlines remaining: " << (imageHeight - j) << ' ' << std::flush;
-				for (int i = 0; i < imageWidth; i++)
-				{
-					vec3 pixelColor{};
-					ZoneScopedN("Pixel");
-					for (int sample = 0; sample < pixelSamples; sample++)
-					{
-						ray r{ getRay(i, j) }; // (!) not normalized
-						pixelColor += rayColor(r, maxDepth, world);
-					}
-					//writeColor(std::cout, pixelColor * pixelSampleScale);
-				}
-			}
-		}
-
-		// write colors
-		if (WRITE_COLOR == 1)
-		{
-			for (size_t i = 0; i < colors.size(); i++)
-			{
-				writeColor(std::cout, colors[i]);
-			}
-		}
-
+		const vec3 viewportU = viewportWidth * right;
+		const vec3 viewportV = -viewportHeight * up; 
 		
+		const vec3 pixelDeltaU = viewportU / imageWidth;
+		const vec3 pixelDeltaV = viewportV / imageHeight;
+
+		const vec3 viewportUpperLeft = center - (focusDist * front) - 0.5 * (viewportU + viewportV);
+		const vec3 pixel00 = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
 		
+		const float defocusRadius = focusDist * std::tan(degreesToRadians(defocusAngle / 2.0));
+		const vec3 defocusDiskU = right * defocusRadius;
+		const vec3 defocusDiskV = up * defocusRadius;
 
-		std::clog << "\rDone.                 \n";
-	}
-
-private:
-	vec3 center{};
-	vec3 pixel00{};
-	vec3 pixelDeltaU{};
-	vec3 pixelDeltaV{};
-	vec3 right{};
-	vec3 up{};
-	vec3 front{};
-	vec3 defocusDiskU{};
-	vec3 defocusDiskV{};
-
-	double pixelSampleScale{};
-	int imageHeight{};
-
-	void initialize()
-	{
-		imageHeight = int(imageWidth / aspectRatio);
-		imageHeight = imageHeight < 1 ? 1 : imageHeight;
-		pixelSampleScale = 1.0 / pixelSamples;
-
-		center = lookFrom;
-
-		auto theta{ degreesToRadians(vfov) };
-		auto h{ std::tan(theta / 2.0) };
-		auto viewportHeight{ 2.0 * h * focusDist};
-		auto viewportWidth{ viewportHeight * imageWidth / imageHeight };
-
-		front = normalize(lookFrom - lookAt);
-		right = normalize(cross(worldUp, front));
-		up = normalize(cross(front, right));
-
-		auto viewportU{ viewportWidth * right };
-		auto viewportV{ -viewportHeight * up }; // (!) why negative again? see before positionable-camera
-
-		pixelDeltaU = viewportU / imageWidth;
-		pixelDeltaV = viewportV / imageHeight;
-
-		auto viewportUpperLeft{ 
-			center 
-			- (focusDist * front) 
-			- 0.5 * (viewportU + viewportV) 
-		};
-		pixel00 = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
-
-		double defocusRadius{ focusDist * std::tan(degreesToRadians(defocusAngle / 2.0)) };
-		defocusDiskU = right * defocusRadius;
-		defocusDiskV = up * defocusRadius;
-	}
-
-	vec3 rayColor(const ray& r, int depth, const Hittable& world)
-	{
-		if (depth <= 0)
-			return vec3(0.0);
-
-		HitRecord rec{};
-
-		if (world.hit(r, 0.001, infinity, rec)) // account for shadow acne
-		{
-			ray scattered{};
-			vec3 attenuation{};
-			if (rec.mat->scatter(r, rec, attenuation, scattered))
-				return attenuation * rayColor(scattered, depth - 1, world);
-			return vec3(0.0);
-		}
-
-		vec3 dir{ normalize(r.direction()) };
-		auto a{ 0.5 * (dir.y() + 1.0) };
-		return (1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0);
-	}
-
-	vec3 sampleSquare() const
-	{
-		return vec3(randomDouble() - 0.5, randomDouble() - 0.5, 0);
+		return Camera(center, pixel00, pixelDeltaU, pixelDeltaV, defocusDiskU, defocusDiskV, defocusAngle);
 	}
 
 	ray getRay(int i, int j) const
 	{
-		//auto offset{ sampleSquare() };
-		//auto pixelSample{ 
-		//	pixel00 
-		//	+ (i + offset.x()) * pixelDeltaU 
-		//	+ (j + offset.y()) * pixelDeltaV 
-		//};
-		auto pixelSample{
-			pixel00
-			+ i * pixelDeltaU
-			+ j * pixelDeltaV
+		auto offset{ sampleSquare() };
+
+		auto pixelSample{ 
+			pixel00 
+			+ (i + offset.x()) * pixelDeltaU 
+			+ (j + offset.y()) * pixelDeltaV 
 		};
-		vec3 rayOrigin{ (defocusAngle <= 0) ? center : defocusDiskSample() };
+
+		vec3 rayOrigin{ (defocusAngle <= 0.) ? center : defocusDiskSample() };
 		auto rayDir{ pixelSample - rayOrigin };
 
 		return ray(rayOrigin, rayDir);
+	}
+
+	vec3 center{};
+	vec3 pixel00{};
+	vec3 pixelDeltaU{};
+	vec3 pixelDeltaV{};
+	vec3 defocusDiskU{};
+	vec3 defocusDiskV{};
+	float defocusAngle{};
+
+private:
+	Camera(const vec3& center, const vec3& pixel00,
+		const vec3& pixelDeltaU, const vec3& pixelDeltaV,
+		const vec3& defocusDiskU, const vec3& defocusDiskV,
+		float defocusAngle)
+	:	center(center), 
+		pixel00(pixel00), 
+		pixelDeltaU(pixelDeltaU),
+		pixelDeltaV(pixelDeltaV),
+		defocusDiskU(defocusDiskU), 
+		defocusDiskV(defocusDiskV),
+		defocusAngle(defocusAngle)
+	{
 	}
 
 	vec3 defocusDiskSample() const

@@ -3,78 +3,36 @@
 #include <cmath>
 #include <limits>
 #include <random>
-#include "vec3.h"
 
 #include <cstdlib>
 
-const double infinity{ std::numeric_limits<double>::infinity() };
-const double pi{ 3.1415926535897932385 };
+const float infinity{ std::numeric_limits<float>::infinity() };
+const float pi = 3.1415926535897932385;
 
-inline double degreesToRadians(double degrees)
+inline float degreesToRadians(float degrees)
 {
-	return degrees * pi / 180.0;
+	return degrees * pi / 180.0f;
 }
 
-inline double randomDouble() 
+inline float randomfloat() 
 {
-    thread_local std::uniform_real_distribution<double> distribution(0.0, 1.0); // [0.0, 1.0)
-    thread_local std::mt19937 generator{};
+    thread_local std::uniform_real_distribution<float> distribution; // [0.0, 1.0)
+    thread_local std::mt19937 generator;
     return distribution(generator);
 }
 
-inline double randomDouble(double min, double max)
+inline float randomfloat(float min, float max)
 {
-    return min + (max - min) * randomDouble();
+    return min + (max - min) * randomfloat();
 }
 
-inline vec3 randomVector()
+inline float linearToGamma(float a)
 {
-    return vec3(randomDouble(), randomDouble(), randomDouble());
+    auto gamma{ 2.2f };
+    return std::pow(a, 1.0f / gamma);
 }
 
-inline vec3 randomVector(double min, double max)
-{
-    return vec3(randomDouble(min, max), randomDouble(min, max), randomDouble(min, max));
-}
-
-inline vec3 randomUnitVector()
-{
-    while (true)
-    {
-        auto v{ vec3(randomDouble(), randomDouble(), randomDouble()) };
-        auto lensq{ v.lengthSquared() };
-        if (lensq > 1e-160)
-            return v / std::sqrt(lensq);
-    }
-}
-
-inline vec3 randomUnitVector(double min, double max)
-{
-    while (true)
-    {
-        auto v{ vec3(randomDouble(min, max), randomDouble(min, max), randomDouble(min, max)) };
-        auto lensq{ v.lengthSquared() };
-        if (lensq > 1e-160)
-            return v / std::sqrt(lensq);
-    }
-}
-
-inline vec3 randomUnitCircle()
-{
-    while (true)
-    {
-        vec3 v{ randomDouble(-1, 1), randomDouble(-1, 1), 0 };
-        if (v.lengthSquared() < 1)
-            return v;
-    }
-}
-
-inline double linearToGamma(double a)
-{
-    auto gamma{ 2.2 };
-    return std::pow(a, 1.0 / gamma);
-}
-
+/*
 template<typename T, size_t alignment = 64>
 class aligned_vector {
 private:
@@ -169,3 +127,4 @@ public:
     const_iterator end() const { return m_data + m_size; }
 
 };
+*/

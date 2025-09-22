@@ -5,45 +5,38 @@
 #include <vector>
 #include <memory>
 
-#include "sphere.h"
+#include "tracy/Tracy.hpp"
 
 class Sphere;
 
 class HittableList : public Hittable
 {
 public:
-	std::vector<std::shared_ptr<Sphere>> objects{};
+	std::vector<std::unique_ptr<Hittable>> objects{};
 
 	HittableList() {}
-
-	HittableList(std::shared_ptr<Sphere> object)
-	{
-		add(object);
-	}
 
 	void clear()
 	{
 		objects.clear();
 	}
 
-	void add(std::shared_ptr<Sphere> object)
+	void add(Hittable* object)
 	{
-		objects.push_back(object);
+		objects.push_back(std::move(std::unique_ptr<Hittable>(object)));
 	}
 
-	bool hit(const ray& r, double tMin, double tMax, HitRecord& rec) const
+	bool hit(const ray& r, float tMin, float tMax, HitRecord& rec) const override
 	{ 
-		HitRecord tempRec{};
 		bool hitAnything{ false };
 		auto closestSoFar{ tMax };
 
 		for (const auto& object : objects)
 		{
-			if (object->hit(r, tMin, closestSoFar, tempRec))
+			if (object->hit(r, tMin, closestSoFar, rec))
 			{
 				hitAnything = true;
-				closestSoFar = tempRec.t;
-				rec = tempRec; // (!) redundant?
+				closestSoFar = rec.t;
 			}
 		}
 

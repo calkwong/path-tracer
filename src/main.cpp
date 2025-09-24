@@ -29,7 +29,7 @@ vec3 rayColor(const ray& r, int depth, const Hittable& world)
     {
         ray scattered{};
         vec3 attenuation{};
-        if (rec.mat->scatter(r, rec, attenuation, scattered))
+        if (rec.mat->scatter(r, rec, attenuation, scattered)) // (!) fix unique ptr check
             return attenuation * rayColor(scattered, depth - 1, world);
         return vec3(0.0f);
     }
@@ -106,10 +106,9 @@ void render(std::vector<vec3>& buffer, const Hittable& world, const Camera& cam,
                     for (int sample = 0; sample < pixelSamples; sample++)
                     {
                         ray r{ cam.getRay(x, y) }; // (!) not normalized
-                        pixelColor += rayColor(r, maxDepth, world);
-                        //pixelColor += rayColorNonRecursive(r, maxDepth, world);
+                        //pixelColor += rayColor(r, maxDepth, world);
+                        pixelColor += rayColorNonRecursive(r, maxDepth, world);
                     }
-                    //buffer[y * imageWidth + x] = pixelColor / static_cast<float>(pixelSamples);
                     buffer[y * imageWidth + x] = pixelColor;
                 }
             }
@@ -138,10 +137,10 @@ void render(std::vector<vec3>& buffer, const Hittable& world, const Camera& cam,
                             for (int sample = 0; sample < pixelSamples; sample++)
                             {
                                 ray r{ cam.getRay(x + t, y + y2) }; // (!) not normalized
-                                //pixelColor += rayColor(r, maxDepth, world);
-                                pixelColor += rayColorNonRecursive(r, maxDepth, world);
+                                pixelColor += rayColor(r, maxDepth, world);
+                                //pixelColor += rayColorNonRecursive(r, maxDepth, world);
                             }
-                            buffer[(y + y2) * imageWidth + (x + t)] = pixelColor / static_cast<float>(pixelSamples);
+                            buffer[(y + y2) * imageWidth + (x + t)] = pixelColor;
                         }
                     }
                 }
@@ -189,7 +188,7 @@ void render(std::vector<vec3>& buffer, const Hittable& world, const Camera& cam,
     {
         for (size_t i = 0; i < buffer.size(); i++)
         {
-            writeColor(std::cout, buffer[i]);
+            writeColor(std::cout, buffer[i] / static_cast<float>(pixelSamples));
         }
     }
 #endif
@@ -205,7 +204,7 @@ int main() {
 
     {
         auto groundMaterial = new Lambertian(vec3(0.5f, 0.5f, 0.5f));
-        world.add(new Sphere(vec3(0.f, -1000.f, 0.f), 1000.f, groundMaterial));
+        world.add(Sphere(vec3(0.f, -1000.f, 0.f), 1000.f, groundMaterial));
 
         for (int a = -11; a < 11; a++) {
             for (int b = -11; b < 11; b++) {
@@ -219,31 +218,31 @@ int main() {
                         // diffuse
                         auto albedo = randomVector();
                         sphereMaterial = new Lambertian(albedo);
-                        world.add(new Sphere(center, 0.2f, sphereMaterial));
+                        world.add(Sphere(center, 0.2f, sphereMaterial));
                     }
                     else if (choose_mat < 0.95f) {
                         // metal
                         auto albedo = randomVector(0.5f, 1.f);
                         sphereMaterial = new Metal(albedo);
-                        world.add(new Sphere(center, 0.2f, sphereMaterial));
+                        world.add(Sphere(center, 0.2f, sphereMaterial));
                     }
                     else {
                         // glass
                         sphereMaterial = new Dielectric(1.5f);
-                        world.add(new Sphere(center, 0.2f, sphereMaterial));
+                        world.add(Sphere(center, 0.2f, sphereMaterial));
                     }
                 }
             }
         }
 
         auto material1 = new Dielectric(1.5f);
-        world.add(new Sphere(vec3(0.f, 1.f, 0.f), 1.0f, material1));
+        world.add(Sphere(vec3(0.f, 1.f, 0.f), 1.0f, material1));
 
         auto material2 = new Lambertian(vec3(0.4f, 0.2f, 0.1f));
-        world.add(new Sphere(vec3(-4.f, 1.f, 0.f), 1.0f, material2));
+        world.add(Sphere(vec3(-4.f, 1.f, 0.f), 1.0f, material2));
 
         auto material3 = new Metal(vec3(0.7f, 0.6f, 0.5f));
-        world.add(new Sphere(vec3(4.f, 1.f, 0.f), 1.0f, material3));
+        world.add(Sphere(vec3(4.f, 1.f, 0.f), 1.0f, material3));
     }
 
     const vec3 lookFrom = vec3(13., 2., 3.);

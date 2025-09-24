@@ -16,37 +16,13 @@ public:
 	{
 	}
 
-	bool hit(const ray& r, float tMin, float tMax, HitRecord& rec) const override
+	bool hit(const ray& r, float tMin, float tMax, HitRecord& rec) const override // (!) remove?
 	{
-		// Section 5.1, 6.2 for proof
-		const vec3 d{ r.direction() };
-		const vec3 cq{ center - r.origin() };
-		const float a{ d.lengthSquared() };
-		const float h{ dot(d, cq) };
-		const float c{ cq.lengthSquared() - radius * radius };
-		const float discriminant{ h * h - a * c };
-
-		if (discriminant < 0.)
-			return false;
-
-		const float sqrtd{ std::sqrt(discriminant) };
-		float root{ (h - sqrtd) / a }; 
-		if (root <= tMin || root >= tMax)
-		{
-			root = (h + sqrtd) / a;
-			if (root <= tMin || root >= tMax)
-				return false;
-		}
-
-		rec.t = root;
-		rec.point = r.at(rec.t);
-		rec.normal = (rec.point - center) / radius; // (!) always normalized
-		rec.mat = mat.get();
-
-		return true;
+		return false; 
 	}
 
-private:
+
+//private:
 	vec3 center{};
 	float radius{};
 	std::unique_ptr<Material> mat;

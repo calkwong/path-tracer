@@ -1,9 +1,8 @@
 #pragma once
 
-#include "vec3.h"
-#include "ray.h"
-
+class vec3;
 class Material;
+class ray;
 
 class HitRecord
 {

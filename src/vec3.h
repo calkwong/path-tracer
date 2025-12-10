@@ -1,13 +1,13 @@
 #pragma once
 
-#include "rtweekend.h"
 #include <cmath>
+#include <iostream>
+#include <array>
 
 class vec3
 {
 public:
-	//std::array<float, 3> data{};
-	float data[3]{};
+	std::array<float, 3> data{};
 
 	vec3() {}
 	vec3(float x, float y, float z) : data(x, y, z){}
@@ -130,52 +130,4 @@ inline vec3 cross(const vec3& u, const vec3& v)
 inline vec3 normalize(const vec3& v)
 {
 	return v / v.length();
-}
-
-inline vec3 randomVector()
-{
-	return vec3(randomfloat(), randomfloat(), randomfloat());
-}
-
-inline vec3 randomVector(float min, float max)
-{
-	return vec3(randomfloat(min, max), randomfloat(min, max), randomfloat(min, max));
-}
-
-inline vec3 randomUnitVector()
-{
-	while (true)
-	{
-		auto v{ randomVector(-1, 1) };
-		auto lensq{ v.lengthSquared() };
-		if (lensq > 1e-160 && lensq <= 1.0)
-			return v / std::sqrt(lensq);
-	}
-}
-
-inline vec3 randomUnitCircle()
-{
-	while (true)
-	{
-		vec3 v{ randomfloat(-1.f, 1.f), randomfloat(-1.f, 1.f), 0.f };
-		if (v.lengthSquared() < 1.f)
-			return v;
-	}
-}
-
-inline vec3 reflect(const vec3& v, const vec3& n)
-{
-	return v - 2.0 * dot(v, n) * n;
-}
-
-inline vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat) {
-	auto cos_theta = std::fmin(dot(-uv, n), 1.0);
-	vec3 r_out_perp = etai_over_etat * (uv + cos_theta * n);
-	vec3 r_out_parallel = -std::sqrt(std::fabs(1.0 - r_out_perp.lengthSquared())) * n;
-	return r_out_perp + r_out_parallel;
-}
-
-inline vec3 sampleSquare()
-{
-	return vec3(randomfloat() - 0.5, randomfloat() - 0.5, 0.);
 }

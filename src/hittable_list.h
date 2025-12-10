@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hittable.h"
+#include "vec3.h"
 #include "ray.h"
 #include "sphere.h"
 
@@ -9,15 +10,13 @@
 
 #include "tracy/Tracy.hpp"
 
-class Sphere;
-
 struct Geometry
 {
 	vec3 center{};
 	float radius{};
 };
 
-class HittableList : public Hittable
+class HittableList final: public Hittable
 {
 public:
 	std::vector<Geometry> spheres{};
@@ -28,7 +27,7 @@ public:
 	void clear()
 	{
 		spheres.clear();
-		materials.clear(); // (!) leak? 
+		materials.clear();
 	}
 
 	void add(Sphere&& s)

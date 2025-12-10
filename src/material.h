@@ -2,8 +2,9 @@
 
 #include "vec3.h"
 #include "ray.h"
-#include "rtweekend.h"
 #include "hittable.h"
+#include "utility.h"
+#include "random.h"
 
 #include "tracy/Tracy.hpp"
 

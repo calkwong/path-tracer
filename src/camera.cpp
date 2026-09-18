@@ -12,6 +12,7 @@
 #include <glm/exponential.hpp>
 #include <glm/gtc/random.hpp>
 #include <stb_image_write.h>
+#include <tracy/Tracy.hpp>
 
 #include <iostream>
 #include <vector>
@@ -103,6 +104,7 @@ auto Camera::render(const World& world) -> bool
 
     auto work_fn = [&](Work& w)
     {
+        ZoneScopedN("Trace per pixel");
         int x = w.x;
         int y = w.y;
         glm::vec3 color = glm::vec3(0.0);
@@ -118,7 +120,6 @@ auto Camera::render(const World& world) -> bool
 
     const auto start = std::chrono::steady_clock::now();
 
-    // TODO: watch for false sharing when writing to pixels
     std::for_each(
         std::execution::par,
         work.begin(),

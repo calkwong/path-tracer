@@ -24,7 +24,7 @@ int main()
     cam.aspect_ratio = 16.0 / 9.0;
     cam.image_width = 1280;
 
-    cam.spp = 100;
+    cam.spp = 500;
     cam.max_depth = 20;
 
     cam.look_from = glm::vec3(13, 2, 3);

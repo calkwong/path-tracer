@@ -1,18 +1,17 @@
-file(GLOB_RECURSE SOURCES
-    "${PROJECT_SOURCE_DIR}/src/*.h"
-    )
+find_package(TBB REQUIRED)
+if (TBB_FOUND)
+  target_link_libraries(pt PRIVATE TBB::tbb)
+endif()
 
-#add_library (src STATIC 
-#  "${SOURCES}"
-#)
+target_sources(pt PRIVATE
+  main.cpp
+  extern.cpp
+  ray.cpp
+  hittable.cpp
+  world.cpp
+  interval.cpp
+  camera.cpp
+  rando.cpp
+  )
 
-add_executable(raytracing-1 main.cpp 
-	${SOURCES}
-	"${PROJECT_SOURCE_DIR}/thirdparty/tracy/public/TracyClient.cpp"
-)
-
-target_include_directories(raytracing-1 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-
-target_link_libraries(raytracing-1 PUBLIC Tracy::TracyClient)
-
-set_property(TARGET raytracing-1 PROPERTY CXX_STANDARD 23)
+set_target_properties(pt PROPERTIES CXX_STANDARD 20)

@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.15...4.0)
+cmake_minimum_required(VERSION 3.14)
+project(pt)
 
-project("raytracing-1")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
-
+add_executable(pt)
 add_subdirectory(src)
-add_subdirectory(thirdparty)
+add_subdirectory(external)

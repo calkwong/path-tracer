@@ -1,28 +1,11 @@
 #pragma once
 
-#include "vec3.h"
+#include <glm/ext/vector_float3.hpp>
 
-class ray
+struct Ray
 {
-public:
-	ray()
-	{
-	}
+    glm::vec3 origin;
+    glm::vec3 direction;
 
-	ray(const vec3& origin, const vec3& direction)
-		: orig{ origin}, dir{ direction }
-	{
-	}
-
-	const vec3& origin() const { return orig; }
-	const vec3& direction() const { return dir; }
-
-	vec3 at(float t) const
-	{
-		return orig + t * dir;
-	}
-
-private:
-	vec3 orig{};
-	vec3 dir{};
+    auto at(float t) const -> glm::vec3;
 };

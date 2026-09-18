@@ -23,6 +23,11 @@ auto random_vector() -> glm::vec3
     return glm::vec3(random_float(), random_float(), random_float());
 }
 
+auto random_vector(float min, float max) -> glm::vec3
+{
+    return glm::vec3(random_float(min, max), random_float(min, max), random_float(min, max));
+}
+
 auto random_in_unit_disk() -> glm::vec3
 {
     while (true)
